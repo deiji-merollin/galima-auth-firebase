@@ -1,55 +1,56 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import {
-GoogleAuthProvider,
-signInWithPopup,
-signOut,
-onAuthStateChanged,
-} from "firebase/auth";
-import { auth } from "../firebase";
+"use client";
 
-// Create a context for authentication
+import { createContext, useContext, useEffect, useState } from "react";
+import {
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import { auth } from "@/app/firebase";
+
 const AuthContext = createContext();
 
-// Auth provider component
 export const AuthContextProvider = ({ children }) => {
-const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
 
-// Google sign-in
-const googleSignIn = async () => {
-try {
-const provider = new GoogleAuthProvider();
-await signInWithPopup(auth, provider);
-} catch (error) {
-console.error("Google sign-in error:", error);
-}
+  // 🔹 Email/Password Methods
+  const signup = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+  const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
+
+  // 🔹 OAuth Providers
+  const googleSignIn = () => signInWithPopup(auth, new GoogleAuthProvider());
+  const githubSignIn = () => signInWithPopup(auth, new GithubAuthProvider());
+  const facebookSignIn = () => signInWithPopup(auth, new FacebookAuthProvider());
+
+  // 🔹 Logout
+  const logOut = () => signOut(auth);
+
+  // 🔹 Track User State
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => setUser(currentUser));
+    return () => unsubscribe();
+  }, []);
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        signup,
+        login,
+        googleSignIn,
+        githubSignIn,
+        facebookSignIn,
+        logOut,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Log out
-const logOut = async () => {
-try {
-await signOut(auth);
-} catch (error) {
-console.error("Sign-out error:", error);
-}
-};
-
-// Listen for auth state changes
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-    setUser(currentUser || null);
-  });
-
-  // Cleanup listener on unmount
-  return () => unsubscribe();
-}, []);
-
-
-return (
-<AuthContext.Provider value={{ user, googleSignIn, logOut }}>
-{children}
-</AuthContext.Provider>
-);
-};
-
-// Custom hook to use AuthContext
 export const UserAuth = () => useContext(AuthContext);

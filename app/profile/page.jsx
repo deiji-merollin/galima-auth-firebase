@@ -1,34 +1,27 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { UserAuth } from "../context/AuthContext";
-import Spinner from "../components/Spinner";
+import { useAuth } from "@/app/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-const page = () => {
-  const { user } = UserAuth();
-  const [loading, setLoading] = useState(true);
+export default function ProfilePage() {
+  const { user, logOut } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    const checkAuthentication = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      setLoading(false);
-    };
-    checkAuthentication();
+    if (!user) router.push("/login");
   }, [user]);
 
+  if (!user) return null;
+
   return (
-    <div className="p-4">
-      {loading ? (
-        <Spinner />
-      ) : user ? (
-        <p>
-          Welcome, {user.displayName} - you are logged in to the profile page -
-          a protected route.
-        </p>
-      ) : (
-        <p>You must be logged in to view this page - protected route.</p>
-      )}
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h1 className="text-2xl font-semibold mb-4">Welcome, {user.email}</h1>
+      <button
+        onClick={logOut}
+        className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+      >
+        Log Out
+      </button>
     </div>
   );
-};
-
-export default page;
+}
